@@ -1,7 +1,7 @@
 //Angular
 import { BrowserModule } from '@angular/platform-browser';
 import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
-import{ HttpClientModule } from '@angular/common/http'
+import { HttpClientModule } from '@angular/common/http'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -36,10 +36,12 @@ import { RegistrationComponent } from './components/user/registration/registrati
 
 //Servicos
 import { EventoService } from './services/evento.service';
+import { LoteService } from './services/lote.service';
 
 //Pipe
 import { DateTimeFormatPipe } from './helpers/DateTimeFormat.pipe';
 import { EventoListaComponent } from './components/eventos/evento-lista/evento-lista.component';
+import { NgxCurrencyModule } from 'ngx-currency';
 
 defineLocale('pt-br', ptBrLocale);
 
@@ -60,7 +62,7 @@ defineLocale('pt-br', ptBrLocale);
     UserComponent,
     LoginComponent,
     RegistrationComponent
-   ],
+  ],
   imports: [
     BrowserModule,
     AppRoutingModule,
@@ -77,12 +79,14 @@ defineLocale('pt-br', ptBrLocale);
       timeOut: 3000,
       positionClass: 'toast-bottom-right',
       preventDuplicates: true,
-      progressBar:true,
+      progressBar: true,
     }),
     NgxSpinnerModule,
+    NgxCurrencyModule,
   ],
   providers: [
-    EventoService
+    EventoService,
+    LoteService,
   ],
   bootstrap: [AppComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
