@@ -1,9 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using ProEventos.Application.Contratos;
 using ProEventos.Application.Dtos;
 using ProEventos.Domain.Identity;
@@ -28,29 +27,103 @@ namespace ProEventos.Application
             _mapper = mapper;
             _userPersist = userPersist;
         }
-        public Task<SignInResult> CheckUserPasswordAsync(UserUpdateDto userUpdateDto, string password)
+        public async Task<SignInResult> CheckUserPasswordAsync(UserUpdateDto userUpdateDto, string password)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var user = await _userManager.Users
+                    .SingleOrDefaultAsync(user => user.UserName == userUpdateDto.UserName.ToLower());
+
+                return await _signInManager.CheckPasswordSignInAsync(user, password, false);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Erro ao tentar verificar password. Erro: {ex.Message} ");
+            }
         }
 
-        public Task<UserDto> CreateAccountAsync(UnobservedTaskExceptionEventArgs userDto)
+        public async Task<UserDto> CreateAccountAsync(UserDto userDto)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var user = _mapper.Map<User>(userDto);
+                var result = await _userManager.CreateAsync(user, userDto.Password);
+
+                if (result.Succeeded)
+                {
+                    var userToReturn = _mapper.Map<UserDto>(user);
+                    return userToReturn;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Erro ao tentar criar usuário. Erro: {ex.Message} ");
+            }
         }
 
-        public Task<UserUpdateDto> GetUserByUsernameAsync(string username)
+        public async Task<UserUpdateDto> GetUserByUserNameAsync(string userName)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var user = await _userPersist.GetUserByUserNameAsync(userName);
+                if (user == null) return null;
+
+                var userUpdateDto = _mapper.Map<UserUpdateDto>(user);
+                return userUpdateDto;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Erro ao tentar buscar usuário por username. Erro: {ex.Message} ");
+            }
         }
 
-        public Task<UserUpdateDto> UpdateAccount(UserUpdateDto userUpdateDto)
+        public async Task<UserUpdateDto> UpdateAccount(UserUpdateDto userUpdateDto)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var user = await _userPersist.GetUserByUserNameAsync(userUpdateDto.UserName);
+                if (user == null) return null;
+
+                userUpdateDto.Id = user.Id;
+
+                _mapper.Map(userUpdateDto, user);
+
+                if (userUpdateDto.Password != null)
+                {
+                    var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                    await _userManager.ResetPasswordAsync(user, token, userUpdateDto.Password);
+                }
+
+                _userPersist.Update<User>(user);
+
+                if (await _userPersist.SaveChangesAsync())
+                {
+                    var userRetorno = await _userPersist.GetUserByUserNameAsync(user.UserName);
+
+                    return _mapper.Map<UserUpdateDto>(userRetorno);
+                }
+
+                return null;
+            }
+            catch (System.Exception ex)
+            {
+                throw new Exception($"Erro ao tentar atualizar usuário. Erro: {ex.Message}");
+            }
         }
 
-        public Task<bool> UserExists(string username)
+        public async Task<bool> UserExists(string userName)
         {
-            throw new NotImplementedException();
+            try
+            {
+                return await _userManager.Users
+                    .AnyAsync(user => user.UserName == userName.ToLower());
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Erro ao tentar se usuário existe. Erro: {ex.Message} ");
+            }
         }
     }
 }
