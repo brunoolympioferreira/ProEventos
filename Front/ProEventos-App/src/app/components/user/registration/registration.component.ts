@@ -2,6 +2,10 @@ import { ValidatorField } from './../../../helpers/validatorField';
 import { AbstractControl, AbstractControlOptions } from '@angular/forms';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Component, OnInit } from '@angular/core';
+import { User } from '@app/models/Identity/User';
+import { AccountService } from '@app/services/account.service';
+import { Router } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-registration',
@@ -9,11 +13,17 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./registration.component.scss']
 })
 export class RegistrationComponent implements OnInit {
+
+  user = {} as User;
   form: FormGroup;
+  constructor(
+    private fb: FormBuilder,
+    private accountService: AccountService,
+    private router: Router,
+    private toaster: ToastrService
+  ) { }
 
-  constructor(public fb: FormBuilder) { }
-
-  get f(): any {return this.form.controls; }
+  get f(): any { return this.form.controls; }
 
   ngOnInit(): void {
     this.validation();
@@ -22,16 +32,24 @@ export class RegistrationComponent implements OnInit {
   private validation(): void {
 
     const formOptions: AbstractControlOptions = {
-      validators: ValidatorField.mustMatch('senha','confirmeSenha')
+      validators: ValidatorField.mustMatch('password', 'confirmePassword')
     };
 
     this.form = this.fb.group({
-      primeiroNome: ['',Validators.required],
-      ultimoNome: ['',Validators.required],
-      email: ['',[Validators.required, Validators.email]],
-      userName: ['',Validators.required],
-      senha: ['',[Validators.required, Validators.minLength(6)]],
-      confirmeSenha: ['',Validators.required],
+      primeiroNome: ['', Validators.required],
+      ultimoNome: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      userName: ['', Validators.required],
+      password: ['', [Validators.required, Validators.minLength(4)]],
+      confirmePassword: ['', Validators.required],
     }, formOptions);
+  }
+
+  register(): void {
+    this.user = { ...this.form.value };
+    this.accountService.register(this.user).subscribe(
+      () => this.router.navigateByUrl('/dashboard'),
+      (error: any) => this.toaster.error(error.error)
+    )
   }
 }
